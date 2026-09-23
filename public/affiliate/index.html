@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partner Portal — Earn Commission</title>
+<link rel="stylesheet" href="/shared/style.css">
+<style>
+  .portal-hero {
+    background: linear-gradient(120deg, #16a34a 0%, #6c3ce0 100%);
+    color: #fff; border-radius: 22px; padding: 44px 30px; margin: 20px 0;
+    position: relative; overflow: hidden;
+  }
+  .portal-hero::before { content: '💰'; position: absolute; font-size: 150px; right: 20px; top: 10px; opacity: .18; animation: floatY 5s ease-in-out infinite; }
+  .portal-hero h1 { font-size: clamp(26px, 5vw, 40px); font-weight: 800; margin-bottom: 8px; }
+  .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+  @media (max-width: 640px) { .how { grid-template-columns: 1fr; } }
+  .how .card { text-align: center; }
+  .how .n { font-size: 34px; }
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .auth-tabs button { flex: 1; padding: 12px; border: 2px solid var(--border); background: #fff; border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 15px; }
+  .auth-tabs button.active { border-color: var(--primary); color: var(--primary); background: #faf8ff; }
+  .tabs { display: flex; gap: 6px; overflow-x: auto; padding: 12px 0; scrollbar-width: none; position: sticky; top: 70px; z-index: 50; background: var(--bg); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex: 0 0 auto; padding: 10px 18px; border-radius: 999px; border: 2px solid var(--border); background: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
+  .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .view { display: none; } .view.active { display: block; animation: fadeUp .4s ease; }
+  .refcode-box {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff;
+    border-radius: var(--radius); padding: 20px; text-align: center; margin-bottom: 16px;
+  }
+  .refcode-box .code { font-size: 34px; font-weight: 800; letter-spacing: 6px; margin: 8px 0; }
+  .link-row { display: flex; gap: 8px; margin-top: 10px; }
+  .link-row input { flex: 1; }
+  .prod-row { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--border); align-items: center; }
+  .prod-row img { width: 74px; height: 74px; border-radius: 12px; object-fit: cover; }
+  .share-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .share-btns a, .share-btns button {
+    padding: 8px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; color: #fff;
+  }
+  .wa { background: #25d366; } .fb { background: #1877f2; } .tk { background: #111; }
+  .media-imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin: 10px 0; }
+  .media-imgs img { border-radius: 10px; aspect-ratio: 1; object-fit: cover; cursor: pointer; transition: transform .2s; }
+  .media-imgs img:hover { transform: scale(1.05); }
+  .caption-box { background: #f3f0fa; border-radius: 10px; padding: 12px 14px; font-size: 14px; white-space: pre-wrap; }
+  canvas.chart { width: 100%; height: 180px; }
+  .bottom-pad { height: 40px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="logo" href="/"><span class="dot"></span><span id="siteName">MyStore</span> <span class="text-sm text-muted" style="font-weight:400">Partners</span></a>
+    <div style="flex:1"></div>
+    <span id="userChip" style="display:none"></span>
+    <button class="btn btn-sm btn-outline" id="logoutBtn" style="display:none">Logout</button>
+  </div>
+</header>
+
+<main class="container">
+  <!-- LANDING / AUTH -->
+  <section id="view-landing" class="view active">
+    <div class="portal-hero">
+      <h1>Earn Money Promoting Products 💸</h1>
+      <p style="opacity:.92;max-width:560px">Join as a partner, get your unique referral link, share it on WhatsApp, Facebook & TikTok — and earn commission on every sale. Withdraw when you reach <b id="minWdHero">PKR 1,000</b>.</p>
+    </div>
+    <div class="how stagger">
+      <div class="card"><div class="n">1️⃣</div><b>Sign Up Free</b><p class="text-sm text-muted">Create your partner account in 30 seconds and get your referral code.</p></div>
+      <div class="card"><div class="n">2️⃣</div><b>Share Your Link</b><p class="text-sm text-muted">Copy product links, images & ready captions from your media kit.</p></div>
+      <div class="card"><div class="n">3️⃣</div><b>Earn & Withdraw</b><p class="text-sm text-muted">Commission on every order. Request payout at PKR 1,000+.</p></div>
+    </div>
+    <div class="card mt-2" style="max-width:480px;margin:24px auto">
+      <div class="auth-tabs">
+        <button id="tabLogin" class="active">Login</button>
+        <button id="tabSignup">Sign Up</button>
+      </div>
+      <div id="authError"></div>
+      <div id="form-login">
+        <div class="field"><label>Email</label><input class="input" id="liEmail" type="email" placeholder="you@email.com"></div>
+        <div class="field"><label>Password</label><input class="input" id="liPass" type="password" placeholder="••••••"></div>
+        <button class="btn btn-block" id="loginBtn">Login →</button>
+      </div>
+      <div id="form-signup" style="display:none">
+        <div class="field"><label>Full Name</label><input class="input" id="suName" placeholder="Your name"></div>
+        <div class="field"><label>Email</label><input class="input" id="suEmail" type="email" placeholder="you@email.com"></div>
+        <div class="field"><label>Mobile Number</label><input class="input" id="suPhone" placeholder="03001234567"></div>
+        <div class="field"><label>Password (min 6 characters)</label><input class="input" id="suPass" type="password" placeholder="••••••"></div>
+        <button class="btn btn-success btn-block" id="signupBtn">Create Partner Account 🎉</button>
+        <p class="text-sm text-muted text-center mt-1">Free forever. No fees.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP -->
+  <section id="view-app" class="view">
+    <div class="tabs" id="appTabs">
+      <button class="tab active" data-v="dash">📊 Dashboard</button>
+      <button class="tab" data-v="links">🔗 My Links</button>
+      <button class="tab" data-v="media">🎨 Media Kit</button>
+      <button class="tab" data-v="wallet">💰 Wallet</button>
+    </div>
+
+    <div id="v-dash" class="view active">
+      <div class="refcode-box">
+        <div class="text-sm" style="opacity:.85">Your Referral Code</div>
+        <div class="code" id="refCode">------</div>
+        <button class="btn btn-sm" style="background:#fff;color:var(--primary)" onclick="Aff.copyText(Aff._code,'Referral code copied!')">Copy Code</button>
+      </div>
+      <div class="grid grid-4 stagger" id="statCards"></div>
+      <div class="card mt-2">
+        <h3>Clicks — last 14 days</h3>
+        <canvas class="chart" id="clickChart" width="600" height="180"></canvas>
+      </div>
+      <div class="card mt-2">
+        <h3>Recent Earnings</h3>
+        <div class="table-wrap mt-1"><table><thead><tr><th>Order</th><th>Product</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody id="recentBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <div id="v-links" class="view">
+      <div class="card mb-2">
+        <h3>🔗 Your Main Referral Link</h3>
+        <p class="text-sm text-muted">Share this anywhere — anyone who shops through it earns you commission for 30 days.</p>
+        <div class="link-row"><input class="input" id="mainLink" readonly><button class="btn btn-sm" onclick="Aff.copyText($('#mainLink').value,'Link copied!')">Copy</button></div>
+        <div class="share-btns" id="mainShare"></div>
+      </div>
+      <div class="card">
+        <h3>Per-Product Links</h3>
+        <p class="text-sm text-muted">Higher-converting: link directly to a product.</p>
+        <div id="linkProducts" class="mt-1"></div>
+      </div>
+    </div>
+
+    <div id="v-media" class="view">
+      <div class="card mb-2"><h3>🎨 Media Kit</h3><p class="text-sm text-muted">Tap any image to open full-size. Copy the ready-made caption and post it with your link.</p></div>
+      <div id="mediaList"></div>
+    </div>
+
+    <div id="v-wallet" class="view">
+      <div class="grid grid-3 stagger" id="walletCards"></div>
+      <div class="card mt-2">
+        <h3>Request Withdrawal</h3>
+        <p class="text-sm text-muted">Minimum <b id="minWdTxt">PKR 1,000</b>. We pay via bank transfer / JazzCash / Easypaisa.</p>
+        <div id="wdError" class="mt-1"></div>
+        <div class="grid grid-2 grid-1-m mt-1">
+          <div class="field"><label>Amount (PKR)</label><input class="input" id="wdAmount" type="number" min="0" placeholder="1000"></div>
+          <div class="field"><label>Receive Via</label><select class="input" id="wdMethod"><option value="bank">Bank Transfer</option><option value="jazzcash">JazzCash</option><option value="easypaisa">Easypaisa</option></select></div>
+        </div>
+        <div class="field"><label>Account Details (account title + number)</label><input class="input" id="wdDetails" placeholder="e.g. Adil Khan — 03001234567"></div>
+        <button class="btn btn-success" id="wdBtn">Request Withdrawal 💸</button>
+      </div>
+      <div class="card mt-2">
+        <h3>Earnings History</h3>
+        <div class="table-wrap mt-1"><table><thead><tr><th>Date</th><th>Order</th><th>Product</th><th>Amount</th><th>Status</th></tr></thead><tbody id="earnBody"></tbody></table></div>
+      </div>
+      <div class="card mt-2">
+        <h3>Withdrawal History</h3>
+        <div class="table-wrap mt-1"><table><thead><tr><th>Date</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead><tbody id="wdBody"></tbody></table></div>
+      </div>
+    </div>
+    <div class="bottom-pad"></div>
+  </section>
+</main>
+
+<div id="modalRoot"></div>
+<div id="toast"></div>
+
+<script src="/shared/app.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
