@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyStore — Online Shopping in Pakistan</title>
+<meta name="description" content="Shop quality products online in Pakistan. Cash on Delivery available nationwide.">
+<link rel="stylesheet" href="/shared/style.css">
+<style>
+  .hero {
+    background: linear-gradient(120deg, #6c3ce0 0%, #9d4edd 55%, #ff6b35 130%);
+    color: #fff; border-radius: 22px; padding: 48px 32px; margin: 20px 0 8px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before, .hero::after {
+    content: ''; position: absolute; border-radius: 50%; background: rgba(255,255,255,.10);
+  }
+  .hero::before { width: 260px; height: 260px; right: -70px; top: -70px; animation: floatY 6s ease-in-out infinite; }
+  .hero::after { width: 150px; height: 150px; left: 8%; bottom: -60px; animation: floatY 7s ease-in-out infinite reverse; }
+  .hero h1 { font-size: clamp(28px, 5vw, 46px); font-weight: 800; margin-bottom: 10px; position: relative; z-index: 1; }
+  .hero p { opacity: .92; font-size: 16px; max-width: 520px; position: relative; z-index: 1; }
+  .hero .btn { margin-top: 18px; position: relative; z-index: 1; background: #fff; color: var(--primary); box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto; padding: 8px 18px; border-radius: 999px; border: 2px solid var(--border);
+    background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s;
+  }
+  .chip.active, .chip:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .products { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; margin: 16px 0 40px; }
+  @media (min-width: 700px) { .products { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } }
+  .p-card {
+    background: #fff; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border);
+    cursor: pointer; transition: transform .2s, box-shadow .2s; animation: fadeUp .5s ease both;
+    display: flex; flex-direction: column;
+  }
+  .p-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); }
+  .p-img { aspect-ratio: 1; background: #f1eefb; overflow: hidden; position: relative; }
+  .p-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .35s; }
+  .p-card:hover .p-img img { transform: scale(1.07); }
+  .p-off { position: absolute; top: 10px; left: 10px; background: var(--accent); color: #fff; font-size: 12px; font-weight: 800; padding: 3px 10px; border-radius: 999px; }
+  .p-body { padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .p-name { font-weight: 700; font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 42px; }
+  .p-price { font-size: 17px; font-weight: 800; color: var(--primary); }
+  .p-old { font-size: 13px; color: var(--muted); text-decoration: line-through; }
+  .p-add { margin-top: auto; padding-top: 8px; }
+  .search-box { flex: 1; max-width: 420px; position: relative; }
+  .search-box input { padding-left: 40px; }
+  .search-box .icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); opacity: .5; }
+  .cart-btn { position: relative; background: var(--primary); color: #fff; border: none; width: 46px; height: 46px; border-radius: 50%; font-size: 20px; cursor: pointer; transition: transform .15s; }
+  .cart-btn:hover { transform: scale(1.08); }
+  .cart-count { position: absolute; top: -4px; right: -4px; background: var(--accent); color: #fff; font-size: 11px; font-weight: 800; min-width: 20px; height: 20px; border-radius: 999px; display: flex; align-items: center; justify-content: center; padding: 0 5px; }
+  .drawer-backdrop { position: fixed; inset: 0; background: rgba(26,19,51,.5); z-index: 300; animation: fadeIn .2s; }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100dvh; width: min(420px, 94vw); background: #fff; z-index: 301;
+    display: flex; flex-direction: column; animation: slideInRight .28s ease; box-shadow: -10px 0 40px rgba(0,0,0,.2);
+  }
+  .drawer-head { padding: 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+  .drawer-foot { padding: 16px 18px; border-top: 1px solid var(--border); }
+  .cart-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .cart-item img { width: 64px; height: 64px; border-radius: 10px; object-fit: cover; }
+  .qty-ctrl { display: flex; align-items: center; gap: 10px; }
+  .qty-ctrl button { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); background: #fff; font-weight: 800; cursor: pointer; }
+  .pay-methods { display: grid; gap: 10px; margin: 10px 0; }
+  .pay-opt { display: flex; gap: 12px; align-items: flex-start; border: 2px solid var(--border); border-radius: 12px; padding: 14px; cursor: pointer; transition: border-color .15s; }
+  .pay-opt.selected { border-color: var(--primary); background: #faf8ff; }
+  .pay-opt input { margin-top: 4px; accent-color: var(--primary); }
+  .pay-opt .t { font-weight: 700; }
+  .pay-opt .d { font-size: 13px; color: var(--muted); }
+  .pay-info { background: #f3f0fa; border-radius: 10px; padding: 12px 14px; font-size: 14px; margin-top: 8px; display: none; }
+  .pay-info.show { display: block; animation: fadeUp .3s; }
+  .gallery-main { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 14px; background: #f1eefb; }
+  .gallery-thumbs { display: flex; gap: 8px; margin-top: 8px; }
+  .gallery-thumbs img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; cursor: pointer; border: 2px solid transparent; }
+  .gallery-thumbs img.active { border-color: var(--primary); }
+  .trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 8px 0 30px; }
+  .trust div { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 10px; text-align: center; font-size: 13px; font-weight: 600; }
+  .trust .e { font-size: 26px; display: block; margin-bottom: 6px; }
+  footer { background: #1a1333; color: #cfc8e8; padding: 36px 0 24px; margin-top: 20px; }
+  footer a { color: #cfc8e8; }
+  .view { display: none; } .view.active { display: block; animation: fadeUp .4s ease; }
+  .order-success { text-align: center; padding: 50px 20px; }
+  .order-success .tick { font-size: 70px; animation: popIn .5s ease; }
+</style>
+</head>
+<body>
+
+<div class="announce" id="announceBar" style="display:none"></div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#" class="logo" id="logoHome"><span class="dot"></span><span id="siteName">MyStore</span></a>
+    <div class="search-box">
+      <span class="icon">🔍</span>
+      <input class="input" id="searchInput" placeholder="Search products..." autocomplete="off">
+    </div>
+    <div style="flex:1"></div>
+    <button class="cart-btn" id="cartBtn" aria-label="Cart">🛒<span class="cart-count" id="cartCount" style="display:none">0</span></button>
+  </div>
+</header>
+
+<main class="container">
+  <!-- SHOP VIEW -->
+  <section id="view-shop" class="view active">
+    <div class="hero">
+      <h1>Quality Products,<br>Delivered to Your Door 🚚</h1>
+      <p>Shop the best deals online in Pakistan. Cash on Delivery available nationwide — pay when you receive your order.</p>
+      <button class="btn" onclick="document.getElementById('productsGrid').scrollIntoView({behavior:'smooth'})">Shop Now ↓</button>
+    </div>
+    <div class="chips" id="catChips"></div>
+    <div class="products" id="productsGrid"></div>
+    <div class="trust">
+      <div><span class="e">🚚</span>Cash on Delivery<br><span class="text-muted">Nationwide</span></div>
+      <div><span class="e">↩️</span>7-Day Easy<br><span class="text-muted">Returns</span></div>
+      <div><span class="e">🔒</span>100% Genuine<br><span class="text-muted">Products</span></div>
+    </div>
+  </section>
+
+  <!-- CHECKOUT VIEW -->
+  <section id="view-checkout" class="view">
+    <div class="mt-2 mb-2"><button class="btn btn-outline btn-sm" id="backToShop">← Continue Shopping</button></div>
+    <div class="grid grid-2 grid-1-m" style="align-items:start">
+      <div class="card">
+        <h2 style="margin-bottom:14px">Delivery Details</h2>
+        <div id="coError"></div>
+        <div class="field"><label>Full Name</label><input class="input" id="coName" placeholder="e.g. Adil Abdullah Khan"></div>
+        <div class="field"><label>Mobile Number</label><input class="input" id="coPhone" placeholder="03001234567" inputmode="tel"></div>
+        <div class="field"><label>Complete Address</label><textarea class="input" id="coAddress" placeholder="House, street, area..."></textarea></div>
+        <div class="field"><label>City</label><input class="input" id="coCity" placeholder="e.g. Lahore"></div>
+        <h3 style="margin:18px 0 6px">Payment Method</h3>
+        <div class="pay-methods" id="payMethods"></div>
+        <div class="pay-info" id="payInfo"></div>
+      </div>
+      <div class="card">
+        <h2 style="margin-bottom:14px">Order Summary</h2>
+        <div id="coItems"></div>
+        <div class="flex-between mt-2"><span class="text-muted">Subtotal</span><b id="coSubtotal">PKR 0</b></div>
+        <div class="flex-between mt-1"><span class="text-muted">Shipping</span><b id="coShipping">PKR 0</b></div>
+        <div class="flex-between mt-1" style="font-size:20px"><span>Total</span><b id="coTotal" style="color:var(--primary)">PKR 0</b></div>
+        <button class="btn btn-accent btn-block mt-3" id="placeOrderBtn" style="font-size:17px">Place Order →</button>
+        <p class="text-sm text-muted text-center mt-1">🔒 Your information is safe with us</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUCCESS VIEW -->
+  <section id="view-success" class="view">
+    <div class="card order-success mt-3">
+      <div class="tick">✅</div>
+      <h1 class="mt-2">Order Placed Successfully!</h1>
+      <p class="text-muted mt-1">Thank you for shopping with us. We will call you shortly to confirm your order.</p>
+      <div class="card mt-2" style="display:inline-block; background:#f3f0fa">
+        <div class="text-sm text-muted">Your Order ID</div>
+        <div style="font-size:32px; font-weight:800; color:var(--primary)" id="successOrderId">#0</div>
+        <div class="text-sm text-muted">Total: <b id="successTotal"></b></div>
+      </div>
+      <div class="mt-3"><button class="btn" id="successShopBtn">Continue Shopping</button></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="flex-between" style="flex-wrap:wrap; gap:16px">
+      <div>
+        <div style="font-size:20px; font-weight:800; color:#fff" id="footName">MyStore</div>
+        <div class="text-sm">Quality products delivered across Pakistan.</div>
+      </div>
+      <div class="text-sm">
+        <a href="/affiliate">Become a Partner — earn commission 🤝</a>
+      </div>
+    </div>
+    <div class="text-sm text-center mt-3" style="opacity:.6">© <span id="year"></span> <span id="footName2">MyStore</span>. All rights reserved.</div>
+  </div>
+</footer>
+
+<div id="modalRoot"></div>
+<div id="drawerRoot"></div>
+<div id="toast"></div>
+
+<script src="/shared/app.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
