@@ -3,7 +3,14 @@ const express = require('express');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-const { getSetting } = require('./db');
+const { getSetting, db } = require('./db');
+
+// Auto-seed on first boot (for hosts with no shell access, e.g. Glitch):
+// creates the admin user, settings and sample products if the DB is empty.
+try {
+  const hasAdmin = db.prepare("SELECT 1 FROM users WHERE role = 'admin' LIMIT 1").get();
+  if (!hasAdmin) { console.log('First boot: seeding database...'); require('./seed.js'); }
+} catch (e) { console.log('Auto-seed skipped:', e.message); }
 
 const app = express();
 const PORT = process.env.PORT || 3000;
