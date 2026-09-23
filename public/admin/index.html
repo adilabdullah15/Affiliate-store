@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<link rel="stylesheet" href="/shared/style.css">
+<style>
+  .admin-layout { display: flex; min-height: 100dvh; }
+  .sidebar {
+    width: 230px; background: #1a1333; color: #cfc8e8; padding: 20px 12px;
+    position: sticky; top: 0; height: 100dvh; flex-shrink: 0;
+  }
+  .sidebar .logo { color: #fff; margin-bottom: 24px; padding: 0 8px; }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px;
+    background: none; border: none; color: #cfc8e8; border-radius: 10px; cursor: pointer;
+    font-size: 14px; font-weight: 600; margin-bottom: 4px; text-align: left; transition: all .15s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+  .nav-btn.active { background: var(--primary); color: #fff; }
+  .main { flex: 1; padding: 24px; max-width: 1100px; }
+  .view { display: none; } .view.active { display: block; animation: fadeUp .35s ease; }
+  .login-wrap { min-height: 100dvh; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, #1a1333, #6c3ce0); }
+  .login-card { background: #fff; border-radius: 20px; padding: 36px 30px; width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); animation: popIn .35s ease; }
+  .menu-toggle { display: none; }
+  canvas.chart { width: 100%; height: 200px; }
+  .p-thumb { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  @media (max-width: 820px) {
+    .sidebar { position: fixed; left: -240px; z-index: 400; transition: left .25s; }
+    .sidebar.open { left: 0; }
+    .menu-toggle { display: inline-flex; }
+    .main { padding: 16px; }
+  }
+  .scrim { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 399; display: none; }
+  .scrim.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView" class="login-wrap">
+  <div class="login-card">
+    <div class="logo" style="justify-content:center;margin-bottom:6px"><span class="dot"></span> Admin Panel</div>
+    <p class="text-sm text-muted text-center mb-2">Sign in to manage your store</p>
+    <div id="loginError"></div>
+    <div class="field"><label>Email</label><input class="input" id="adEmail" type="email" placeholder="admin@store.com"></div>
+    <div class="field"><label>Password</label><input class="input" id="adPass" type="password" placeholder="••••••"></div>
+    <button class="btn btn-block" id="adLoginBtn">Login →</button>
+    <p class="text-sm text-muted text-center mt-2">Default: admin@store.com / changeme123<br>⚠️ Change this password after first login!</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appView" class="admin-layout" style="display:none">
+  <div class="scrim" id="scrim"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="logo"><span class="dot"></span> Admin</div>
+    <button class="nav-btn active" data-v="dash">📊 Dashboard</button>
+    <button class="nav-btn" data-v="products">📦 Products</button>
+    <button class="nav-btn" data-v="orders">🧾 Orders <span class="badge badge-pending" id="ordBadge" style="display:none"></span></button>
+    <button class="nav-btn" data-v="partners">🤝 Partners</button>
+    <button class="nav-btn" data-v="withdrawals">💸 Withdrawals <span class="badge badge-pending" id="wdBadge" style="display:none"></span></button>
+    <button class="nav-btn" data-v="settings">⚙️ Settings</button>
+    <div style="margin-top:24px">
+      <button class="nav-btn" id="logoutBtn">🚪 Logout</button>
+      <a class="nav-btn" href="/" target="_blank">🛍️ View Store</a>
+      <a class="nav-btn" href="/affiliate" target="_blank">🤝 Partner Portal</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <button class="btn btn-sm btn-outline menu-toggle mb-2" id="menuBtn">☰ Menu</button>
+
+    <section id="v-dash" class="view active">
+      <h1 class="mb-2">Dashboard</h1>
+      <div class="grid grid-4 stagger" id="dashStats"></div>
+      <div class="card mt-2"><h3>Revenue — last 14 days</h3><canvas class="chart" id="revChart" width="640" height="200"></canvas></div>
+      <div class="grid grid-2 grid-1-m mt-2">
+        <div class="card"><h3>Recent Orders</h3><div class="table-wrap mt-1"><table><thead><tr><th>ID</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody id="dashOrders"></tbody></table></div></div>
+        <div class="card"><h3>Top Products</h3><div id="topProds" class="mt-1"></div></div>
+      </div>
+    </section>
+
+    <section id="v-products" class="view">
+      <div class="flex-between mb-2"><h1>Products</h1><button class="btn btn-sm" id="addProdBtn">+ Add Product</button></div>
+      <div class="table-wrap"><table><thead><tr><th></th><th>Name</th><th>Price</th><th>Comm%</th><th>Stock</th><th>Status</th><th></th></tr></thead><tbody id="prodBody"></tbody></table></div>
+    </section>
+
+    <section id="v-orders" class="view">
+      <h1 class="mb-2">Orders</h1>
+      <div class="filters" id="orderFilters"></div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Customer</th><th>City</th><th>Total</th><th>Payment</th><th>Ref</th><th>Status</th><th></th></tr></thead><tbody id="orderBody"></tbody></table></div>
+    </section>
+
+    <section id="v-partners" class="view">
+      <h1 class="mb-2">Partners</h1>
+      <div class="table-wrap"><table><thead><tr><th>Name</th><th>Code</th><th>Clicks</th><th>Sales</th><th>Earned</th><th>Status</th><th></th></tr></thead><tbody id="partnerBody"></tbody></table></div>
+    </section>
+
+    <section id="v-withdrawals" class="view">
+      <h1 class="mb-2">Withdrawals</h1>
+      <div class="filters" id="wdFilters"></div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Partner</th><th>Amount</th><th>Method</th><th>Details</th><th>Status</th><th></th></tr></thead><tbody id="wdBody"></tbody></table></div>
+    </section>
+
+    <section id="v-settings" class="view">
+      <h1 class="mb-2">Settings</h1>
+      <div class="card" style="max-width:640px">
+        <div id="setMsg"></div>
+        <div class="field"><label>Site Name</label><input class="input" id="s_site_name"></div>
+        <div class="field"><label>Announcement Bar Text</label><input class="input" id="s_announcement"></div>
+        <div class="grid grid-2 grid-1-m">
+          <div class="field"><label>Shipping Fee (PKR)</label><input class="input" id="s_shipping_fee" type="number"></div>
+          <div class="field"><label>Min Withdrawal (PKR)</label><input class="input" id="s_min_withdrawal" type="number"></div>
+        </div>
+        <div class="grid grid-2 grid-1-m">
+          <div class="field"><label>JazzCash Number</label><input class="input" id="s_jazzcash_number" placeholder="03001234567"></div>
+          <div class="field"><label>JazzCash Account Title</label><input class="input" id="s_jazzcash_title"></div>
+        </div>
+        <div class="grid grid-2 grid-1-m">
+          <div class="field"><label>Easypaisa Number</label><input class="input" id="s_easypaisa_number" placeholder="03451234567"></div>
+          <div class="field"><label>Easypaisa Account Title</label><input class="input" id="s_easypaisa_title"></div>
+        </div>
+        <div class="field"><label>Stripe Publishable Key <span class="text-muted">(leave empty to keep card payments disabled)</span></label><input class="input" id="s_stripe_publishable_key" placeholder="pk_live_..."></div>
+        <button class="btn" id="saveSettingsBtn">Save Settings 💾</button>
+      </div>
+      <div class="card mt-2" style="max-width:640px">
+        <h3>🔗 Subdomain Setup</h3>
+        <p class="text-sm text-muted">To run the partner portal on a subdomain (e.g. <b>partners.yourstore.com</b>): in your hosting/DNS panel, point the subdomain to the same server, then configure your reverse proxy (Nginx) so <b>partners.yourstore.com → /affiliate</b>. See README for the exact Nginx snippet.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toast"></div>
+
+<script src="/shared/app.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
